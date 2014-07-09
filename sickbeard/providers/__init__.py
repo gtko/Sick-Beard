@@ -26,6 +26,7 @@ __all__ = ['ezrss',
            't411',
            'tpi',
            'cpasbien',
+           'smartorrent',
            'piratebay',
            'gks',
            'kat',
@@ -114,6 +115,7 @@ def getProviderModule(name):
     name = name.lower()
     prefix = "sickbeard.providers."
     if name in __all__ and prefix + name in sys.modules:
+        print name;
         return sys.modules[prefix + name]
     else:
         raise Exception("Can't find " + prefix + name + " in " + repr(sys.modules))
