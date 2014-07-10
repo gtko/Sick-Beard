@@ -1441,6 +1441,8 @@ class ConfigProviders:
                 sickbeard.TPI = curEnabled
             elif curProvider == 'cpasbien':
                 sickbeard.Cpasbien = curEnabled
+            elif curProvider == 'torrenthound':
+                sickbeard.Torrenthound = curEnabled
             elif curProvider == 'smartorrent':
                 sickbeard.Smartorrent = curEnabled
             elif curProvider == 'kat':

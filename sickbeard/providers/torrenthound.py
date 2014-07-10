@@ -27,6 +27,7 @@ import sickbeard
 import urllib
 import urllib2
 
+
 """
 soupselect.py
 CSS selector support for BeautifulSoup.
@@ -151,11 +152,11 @@ def unmonkeypatch(BeautifulSoupClass=None):
 
 
 
-class SmartorrentProvider(generic.TorrentProvider):
+class TorrenthoundProvider(generic.TorrentProvider):
 
     def __init__(self):
         
-        generic.TorrentProvider.__init__(self, "Smartorrent")
+        generic.TorrentProvider.__init__(self, "Torrenthound")
 
         self.supportsBacklog = True
         
@@ -163,11 +164,11 @@ class SmartorrentProvider(generic.TorrentProvider):
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         self.opener.addheaders=[('User-agent', 'Mozilla/5.0')]
         
-        self.url = "http://smartorrent.com"
+        self.url = "http://www.torrenthound.com"
         
         
     def isEnabled(self):
-        return sickbeard.Smartorrent
+        return sickbeard.Torrenthound
 
     def _get_season_search_strings(self, show, season):
 
@@ -196,58 +197,65 @@ class SmartorrentProvider(generic.TorrentProvider):
         
     def _doSearch(self, searchString, show=None, season=None, french=None):
 
+        print "Demarrage de la recherche"
         results = []
-        data = urllib.urlencode({'page':u'search','term':searchString.replace('!','')})
-        searchUrl = self.url + '/?%s'%data
-        req = urllib2.urlopen(searchUrl,data)
+        searchOri = searchString
+        listLang = [""]
+        if(show.audio_lang == "fr") :
+            listLang = ["french" , "truefrench" , "francais"]
 
-        try:
-            soup = BeautifulSoup(req)
-        except Exception, e:
-            logger.log(u"C'est la merde , ça ne response pas ! : "+str(e), logger.ERROR)
-            return []
+        for lang in listLang :
 
-        rows = soup.findAll("td" , attrs={"class":u"nom"})
-        for row in rows:
-            link = row.findAll("a")[1]
-            title = str(link.text).lower().strip()
-            pageURL = link['href']
+            searchString = searchOri + " " + lang
+            data = urllib.urlencode({"search" : searchString.replace('!','')})
+            searchUrl = self.url + '/%s' %data.replace("=" , "/")
+            print searchUrl
 
-            if "vostfr" in title and ((not show.subtitles) or show.audio_lang == "fr" or french):
-                continue
+            try:
+                req = self.opener.open(searchUrl)
+                soup = BeautifulSoup(req)
+            except Exception, e:
+                print "c est la merde"+str(e)
+                return []
+            rows = select(soup , "table.searchtable td")
+            for row in rows:
+                link = select(row , "a[href^=/hash]")
+                if (len(link) > 0) :
+                    link = link[0]
+                    extract = [s.extract() for s in select(link , ".cat")]
+                    title = str(link.text).lower().strip().encode('utf-8')
+                    downloadTorrentLink = self.url + select(row , "div.sfloat a[title^=.torrent]")[0]["href"]
+                    if "vostfr" in title and ((not show.subtitles) or show.audio_lang == "fr" or french):
+                          continue
+                    if(("french" in title or "truefrench" in title or "francais" in title) or show.audio_lang != "fr") :
+                        print title + " " + downloadTorrentLink
+                        if downloadTorrentLink:
+                            downloadURL = downloadTorrentLink
+                            if "720p" in title:
+                                if "bluray" in title:
+                                    quality = Quality.HDBLURAY
+                                elif "web-dl" in title.lower() or "web.dl" in title.lower():
+                                    quality = Quality.HDWEBDL
+                                else:
+                                    quality = Quality.HDTV
+                            elif "1080p" in title:
+                                quality = Quality.FULLHDBLURAY
+                            elif "hdtv" in title:
+                                if "720p" in title:
+                                    quality = Quality.HDTV
+                                elif "1080p" in title:
+                                    quality = Quality.FULLHDTV
+                                else:
+                                    quality = Quality.SDTV
+                            else:
+                                quality = Quality.SDTV
 
-            torrentPage = urllib2.urlopen(pageURL)
-            torrentSoup = BeautifulSoup(torrentPage)
-            downloadTorrentLink = torrentSoup.find("a", attrs={"class":u'telechargergreen'})["href"]
-            if downloadTorrentLink:
-
-                downloadURL = downloadTorrentLink
-
-                if "720p" in title:
-                    if "bluray" in title:
-                        quality = Quality.HDBLURAY
-                    elif "web-dl" in title.lower() or "web.dl" in title.lower():
-                        quality = Quality.HDWEBDL
-                    else:
-                        quality = Quality.HDTV
-                elif "1080p" in title:
-                    quality = Quality.FULLHDBLURAY
-                elif "hdtv" in title:
-                    if "720p" in title:
-                        quality = Quality.HDTV
-                    elif "1080p" in title:
-                        quality = Quality.FULLHDTV
-                    else:
-                        quality = Quality.SDTV
-                else:
-                    quality = Quality.SDTV
-
-                if show and french==None:
-                    results.append( SmartorrentSearchResult( self.opener, title, downloadURL, quality, str(show.audio_lang) ) )
-                elif show and french:
-                    results.append( SmartorrentSearchResult( self.opener, title, downloadURL, quality, 'fr' ) )
-                else:
-                    results.append( SmartorrentSearchResult( self.opener, title, downloadURL, quality ) )
+                            if show and french==None:
+                                results.append( TorrenthoundSearchResult( self.opener, title, downloadURL, quality, str(show.audio_lang) ) )
+                            elif show and french:
+                                results.append( TorrenthoundSearchResult( self.opener, title, downloadURL, quality, 'fr' ) )
+                            else:
+                                results.append( TorrenthoundSearchResult( self.opener, title, downloadURL, quality ) )
 
         return results
     
@@ -260,7 +268,7 @@ class SmartorrentProvider(generic.TorrentProvider):
 
         return result    
     
-class SmartorrentSearchResult:
+class TorrenthoundSearchResult:
     
     def __init__(self, opener, title, url, quality, audio_langs=None):
         self.opener = opener
@@ -275,4 +283,4 @@ class SmartorrentSearchResult:
     def getQuality(self):
         return self.quality
 
-provider = SmartorrentProvider()
+provider = TorrenthoundProvider()

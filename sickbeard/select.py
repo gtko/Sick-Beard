@@ -1,8 +1,3 @@
-from bs4 import BeautifulSoup
-import cookielib
-import urllib
-import urllib2
-
 """
 soupselect.py
 CSS selector support for BeautifulSoup.
@@ -124,54 +119,3 @@ def unmonkeypatch(BeautifulSoupClass=None):
     if not BeautifulSoupClass:
         from BeautifulSoup import BeautifulSoup as BeautifulSoupClass
     delattr(BeautifulSoupClass, 'findSelect')
-
-
-
-class SmartorrentProvider:
-
-    def __init__(self):
-        self.supportsBacklog = True
-        self.cj = cookielib.CookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
-        self.opener.addheaders=[('User-agent', 'Mozilla/5.0')]
-        self.url = "http://www.torrenthound.com"
-
-    def _doSearch(self, searchString):
-
-        print "Demarrage de la recherche"
-        results = []
-
-        listLang = [""]
-        if(True) :
-            listLang = ["french" , "truefrench" , "franais" , "francais"]
-
-        for lang in listLang :
-
-            searchString += " " + lang
-            data = urllib.urlencode({"search" : searchString.replace('!','')})
-            searchUrl = self.url + '/%s' %data.replace("=" , "/")
-            print searchUrl
-
-            try:
-                req = self.opener.open(searchUrl)
-                soup = BeautifulSoup(req)
-            except Exception, e:
-                print "c est la merde"+str(e)
-                return []
-            rows = select(soup , "table.searchtable td")
-            for row in rows:
-                link = select(row , "a[href^=/hash]")
-                if (len(link) > 0) :
-                    link = link[0]
-                    extract = [s.extract() for s in select(link , ".cat")]
-                    title = str(link.text.encode("utf-8" , "ignore")).lower().strip().encode("utf-8" , "ignore")
-                    if("french" in title or "truefrench" in title or "francais" in title) :
-                        downloadTorrentLink = self.url + select(row , "div.sfloat a[title^=.torrent]")[0]["href"]
-                        print title + " " +downloadTorrentLink
-                # if "vostfr" in title and ((not show.subtitles) or show.audio_lang == "fr" or french):
-                  #      continue
-
-            print "Resultat des recherche"
-
-provider = SmartorrentProvider()
-provider._doSearch("Grimm S02E15")

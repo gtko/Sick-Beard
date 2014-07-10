@@ -30,7 +30,7 @@ from threading import Lock
 
 # apparently py2exe won't build these unless they're imported somewhere
 from sickbeard import providers, metadata
-from providers import ezrss, tvtorrents, torrentleech, btn, nzbsrus, newznab, womble, nzbx, omgwtfnzbs, binnewz, t411, tpi, cpasbien, smartorrent,  piratebay, gks, kat, ethor
+from providers import ezrss, tvtorrents, torrentleech, btn, nzbsrus, newznab, womble, nzbx, omgwtfnzbs, binnewz, t411, tpi, cpasbien , torrenthound , smartorrent,  piratebay, gks, kat, ethor
 from sickbeard.config import CheckSection, check_setting_int, check_setting_str, ConfigMigrator
 
 from sickbeard import searchCurrent, searchBacklog, showUpdater, versionChecker, properFinder, frenchFinder, autoPostProcesser, subtitles, traktWatchListChecker, SentFTPChecker
@@ -226,6 +226,7 @@ THEPIRATEBAY_TRUSTED = True
 THEPIRATEBAY_PROXY = False
 THEPIRATEBAY_PROXY_URL = None
 
+Torrenthound = False
 Smartorrent = False
 Cpasbien = False
 kat = False
@@ -454,6 +455,7 @@ def initialize(consoleLogging=True):
                 TPI, TPI_USERNAME, TPI_PASSWORD, \
                 THEPIRATEBAY, THEPIRATEBAY_PROXY, THEPIRATEBAY_PROXY_URL, THEPIRATEBAY_TRUSTED, \
                 Cpasbien, \
+                Torrenthound, \
                 Smartorrent, \
                 kat, \
                 SEARCH_FREQUENCY, DEFAULT_SEARCH_FREQUENCY, BACKLOG_SEARCH_FREQUENCY, FRENCH_DELAY,\
@@ -746,6 +748,9 @@ def initialize(consoleLogging=True):
         THEPIRATEBAY_PROXY = bool(check_setting_int(CFG, 'PirateBay', 'piratebay_proxy', 0))
         THEPIRATEBAY_PROXY_URL = check_setting_str(CFG, 'PirateBay', 'piratebay_proxy_url', '')
         THEPIRATEBAY_TRUSTED = bool(check_setting_int(CFG, 'PirateBay', 'piratebay_trusted', 0))
+
+        CheckSection(CFG, 'Torrenthound')
+        Torrenthound = bool(check_setting_int(CFG, 'Torrenthound', 'torrenthound', 0))
 
         CheckSection(CFG, 'Cpasbien')
         Cpasbien = bool(check_setting_int(CFG, 'Cpasbien', 'cpasbien', 0))
@@ -1467,6 +1472,12 @@ def save_config():
     
     new_config['Cpasbien'] = {}
     new_config['Cpasbien']['cpasbien'] = int(Cpasbien)
+
+    new_config['Torrenthound'] = {}
+    new_config['Torrenthound']['torrenthound'] = int(Torrenthound)
+
+    new_config['Smartorrent'] = {}
+    new_config['Smartorrent']['smartorrent'] = int(Smartorrent)
 
     new_config['kat'] = {}
     new_config['kat']['kat'] = int(kat)
